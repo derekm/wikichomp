@@ -5,6 +5,7 @@ import sys
 import random
 import urllib2
 import string
+import xml.dom.minidom
 
 form = cgi.FieldStorage()
 if not form.has_key("input"):
@@ -28,21 +29,31 @@ print 'Content-Type: text/plain'
 print ''
 
 term = form.getvalue("input")
+agent = {'User-Agent': 'Mozilla/5.0 (F-Minus Loser Anti-Art; Me; emdash)'}
 
 #grab the page and chomp relevant terms
 req = urllib2.Request("http://en.wikipedia.org/wiki/%s" % term.replace(' ', '_'), \
-                      headers={'User-Agent': 'Mozilla/5.0 (F-Minus Loser Anti-Art; Me; emdash)'})
+                      headers=agent)
+dom = xml.dom.minidom.parseString(urllib2.urlopen(req).read())
+edit = [l.getAttribute('href') \
+	for l in dom.getElementsByTagName('link') \
+		if l.getAttribute('rel') == 'edit']
+if not edit:
+	edit = [l.firstChild.getAttribute('href') \
+		for l in dom.getElementsByTagName('li') \
+			if l.getAttribute('id') == 'ca-viewsource']
+req = urllib2.Request("http://en.wikipedia.org" + edit[0], headers=agent)
 wiki_dump = urllib2.urlopen(req).read().lower()
-relevance_regex = re.compile('<a href="/wiki/.*?" title=".*?">.*?</a>')
-relephants = re.findall(relevance_regex,wiki_dump)
+relevance = re.compile(r'\[\[([\w\':,.()# -]+)(?:\|([\w\':,.()# -]+))?\]\]')
+relephants = re.findall(relevance, wiki_dump)
 
 #construct vocabulary
 vocabulary = []
 
 for each in relephants:
-	vocabulary.append(re.sub(".*>","",each[:-4])) 
-for bang in range(0,vocabulary.count('')):
-	vocabulary.remove('')
+	vocabulary.append(re.sub('^[^\w]', '', each[0]))
+	if each[1]: vocabulary.append(re.sub('^[^\w]', '', each[1]))
+vocabulary = [x for x in vocabulary if x]
 vocab = sorted(vocabulary, key=str.lower)
 
 #form a dictionary from vocabulary
