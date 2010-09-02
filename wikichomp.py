@@ -76,5 +76,5 @@ for each in acronym_dict:
 	if each == '':
 		print
 	else:
-		print random.choice(each)
+		print random.choice(each).capitalize()
 print "\n" + acro_term + " acronymized!\n"
