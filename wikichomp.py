@@ -7,6 +7,8 @@ import urllib2
 import string
 import xml.dom.minidom
 
+from google.appengine.ext import db
+
 form = cgi.FieldStorage()
 if not form.has_key("input"):
 	print """Content-Type: text/html
@@ -24,6 +26,10 @@ if not form.has_key("input"):
 </html>
 """
 	sys.exit()
+
+class Vocab(db.Model):
+	title = db.StringProperty(required=True)
+	werdz = db.StringListProperty(required=True)
 
 print 'Content-Type: text/plain'
 print ''
@@ -69,6 +75,15 @@ for element in acro_term:
 for tick in range(len(acronym_dict)):
 	if acronym_dict[tick] == []:
 		acronym_dict[tick].append(acro_term[tick])
+
+werds = Vocab.gql("WHERE title = :1", acro_term)
+if not len(list(werds)) > 0:
+	werd = Vocab(title=acro_term, werdz=vocab)
+	werd.put()
+else:
+	for werd in werds:
+		werd.werdz = sorted(set.union(set(vocab), set(werd.werdz)))
+		werd.put()
 
 # now generate a random acronym from the dictionary
 print acro_term + " acronymized:\n"
