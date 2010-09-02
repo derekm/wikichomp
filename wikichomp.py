@@ -49,12 +49,10 @@ relephants = re.findall(relevance, wiki_dump)
 
 #construct vocabulary
 vocabulary = []
-
 for each in relephants:
 	vocabulary.append(re.sub('^[^\w]', '', each[0]))
 	if each[1]: vocabulary.append(re.sub('^[^\w]', '', each[1]))
-vocabulary = [x for x in vocabulary if x]
-vocab = sorted(vocabulary, key=str.lower)
+vocab = sorted(set(vocabulary) - set(['']))
 
 #form a dictionary from vocabulary
 acro_term = term.lower().translate(string.maketrans("",""), string.punctuation) #got from http://stackoverflow.com/questions/265960/best-way-to-strip-punctuation-from-a-string-in-python
